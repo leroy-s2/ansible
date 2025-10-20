@@ -25,3 +25,10 @@
     - server_tools
     - process_service_management
     - storage_management
+# Verificación final
+- name: Verificación del estado de los laboratorios
+  hosts: all
+  gather_facts: yes
+  roles:
+    - role: common
+      tasks_from: verify.yml
