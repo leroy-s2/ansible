@@ -1,0 +1,90 @@
+
+# 🔹 Instalar software permitido (Windows)
+- name: Instalar software permitido en el Laboratorio Académico (Windows)
+  ansible.windows.win_chocolatey:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ software_permitido }}"
+  when: ansible_os_family == "Windows"
+
+# 🔹 Instalar software permitido (Linux)
+- name: Instalar software permitido en Linux (Laboratorio Académico)
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ software_permitido }}"
+  when: ansible_os_family == "Debian"
+
+# 🔹 Instalar software permitido (macOS)
+- name: Instalar software permitido en macOS (Laboratorio Académico)
+  community.general.homebrew:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ software_permitido }}"
+  when: ansible_os_family == "Darwin"
+
+# ======================================================
+# 🔒 RESTRICCIONES Y POLÍTICAS
+# ======================================================
+
+# 🔹 Configurar política de navegador (bloquear descargas)
+- name: Configurar política del navegador (Windows)
+  ansible.windows.win_regedit:
+    path: HKLM:\Software\Policies\Microsoft\Edge
+    name: DownloadRestrictions
+    data: 3   # 3 = Bloquear todas las descargas
+    type: dword
+  when:
+    - ansible_os_family == "Windows"
+    - politica_navegador == "restringido"
+
+# 🔹 Configurar política de navegador (Linux)
+- name: Bloquear descargas en Firefox (Linux)
+  ansible.builtin.lineinfile:
+    path: /etc/firefox/firefox.js
+    regexp: '^user_pref\("browser.download'
+    line: 'user_pref("browser.download.folderList", 2);'
+    create: yes
+  when:
+    - ansible_os_family == "Debian"
+    - politica_navegador == "restringido"
+
+# 🔹 Limitar privilegios de usuario (Linux)
+- name: Eliminar privilegios de sudo al usuario del salón
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    regexp: '^{{ nombre_usuario_salon }}'
+    state: absent
+  when:
+    - ansible_os_family == "Debian"
+
+# 🔹 Crear carpeta académica compartida (para documentos)
+- name: Crear carpeta académica en escritorio (Linux)
+  ansible.builtin.file:
+    path: "/home/{{ nombre_usuario_salon }}/Documentos_Academicos"
+    state: directory
+    mode: '0755'
+  when: ansible_os_family == "Debian"
+
+- name: Crear carpeta académica en escritorio (Windows)
+  ansible.windows.win_file:
+    path: "C:\\Users\\{{ nombre_usuario_salon }}\\Documentos_Academicos"
+    state: directory
+  when: ansible_os_family == "Windows"
+
+# 🔹 Mensaje de bienvenida institucional
+- name: Mostrar mensaje institucional al iniciar sesión (Windows)
+  ansible.windows.win_regedit:
+    path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System
+    name: legalnoticecaption
+    data: "Bienvenido al Laboratorio Académico"
+    type: string
+  when: ansible_os_family == "Windows"
+
+- name: Mostrar mensaje institucional al iniciar sesión (Windows) - texto
+  ansible.windows.win_regedit:
+    path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System
+    name: legalnoticetext
+    data: "Este equipo pertenece al Laboratorio Académico. Uso exclusivo para fines educativos. El acceso no autorizado está prohibido."
+    type: string
+  when: ansible_os_family == "Windows"

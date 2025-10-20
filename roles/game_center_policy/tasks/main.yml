@@ -1,13 +1,150 @@
----
-- name: Instalar software permitido en el Game Center (usando Chocolatey)
+
+# 🔹 Instalar software permitido (Windows)
+- name: Instalar software permitido en el Game Center (Windows)
   ansible.windows.win_chocolatey:
     name: "{{ item }}"
     state: present
   loop: "{{ software_permitido }}"
   when: ansible_os_family == "Windows"
 
-- name: Instalar Steam en Linux (usando apt)
+# 🔹 Instalar software permitido (Linux)
+- name: Instalar software permitido en Linux (Game Center)
   ansible.builtin.apt:
-    name: steam
+    name: "{{ item }}"
     state: present
-  when: "'steam' in software_permitido and ansible_os_family == 'Debian'"
+  loop: "{{ software_permitido }}"
+  when: ansible_os_family == "Debian"
+
+# 🔹 Instalar software permitido (macOS)
+- name: Instalar software permitido en macOS (Game Center)
+  community.general.homebrew:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ software_permitido }}"
+  when: ansible_os_family == "Darwin"
+
+# ======================================================
+# ⚙️ OPTIMIZACIÓN Y RENDIMIENTO
+# ======================================================
+
+# 🔹 Aumentar prioridad de rendimiento en Windows
+- name: Ajustar plan de energía a alto rendimiento
+  ansible.windows.win_power_plan:
+    name: "High performance"
+  when: ansible_os_family == "Windows"
+
+# 🔹 Deshabilitar servicios innecesarios en Windows (para juegos)
+- name: Desactivar servicios no esenciales (Windows)
+  ansible.windows.win_service:
+    name: "{{ item }}"
+    state: stopped
+    start_mode: disabled
+  loop:
+    - SysMain        # Desfragmentación en segundo plano
+    - WSearch        # Indexado de Windows
+    - DiagTrack      # Telemetría
+  ignore_errors: yes
+  when: ansible_os_family == "Windows"
+
+# 🔹 Optimizar el uso de CPU y RAM (Linux)
+- name: Instalar herramientas de optimización y monitoreo (Linux)
+  ansible.builtin.apt:
+    name:
+      - gamemode      # Optimiza rendimiento para gaming
+      - mangohud      # Muestra FPS y estadísticas
+    state: present
+  when: ansible_os_family == "Debian"
+
+# ======================================================
+# 🌐 POLÍTICAS DE USO Y RED
+# ======================================================
+
+# 🔹 Configurar política de navegador (sin restricciones)
+- name: Configurar navegador sin restricciones (Windows)
+  ansible.windows.win_regedit:
+    path: HKLM:\Software\Policies\Microsoft\Edge
+    name: DownloadRestrictions
+    data: 0   # 0 = descargas permitidas
+    type: dword
+  when:
+    - ansible_os_family == "Windows"
+    - politica_navegador == "abierto"
+
+# 🔹 Permitir acceso a tiendas y juegos (Linux)
+- name: Permitir acceso a Steam y Epic Games (Linux)
+  ansible.builtin.shell: |
+    ufw allow 27015/tcp
+    ufw allow 27036/tcp
+    ufw allow 443/tcp
+    ufw allow 80/tcp
+  args:
+    warn: false
+  when: ansible_os_family == "Debian"
+
+# ======================================================
+# 🎮 PERSONALIZACIÓN Y EXPERIENCIA DE USUARIO
+# ======================================================
+
+# 🔹 Crear carpeta de juegos en escritorio
+- name: Crear carpeta de juegos en escritorio (Windows)
+  ansible.windows.win_file:
+    path: "C:\\Users\\{{ nombre_usuario_salon }}\\Juegos"
+    state: directory
+  when: ansible_os_family == "Windows"
+
+- name: Crear carpeta de juegos en escritorio (Linux)
+  ansible.builtin.file:
+    path: "/home/{{ nombre_usuario_salon }}/Juegos"
+    state: directory
+    mode: '0755'
+  when: ansible_os_family == "Debian"
+
+# 🔹 Fondo de pantalla personalizado (Windows)
+- name: Establecer fondo de pantalla del Game Center (Windows)
+  ansible.windows.win_regedit:
+    path: HKCU:\Control Panel\Desktop
+    name: Wallpaper
+    data: "C:\\Users\\Public\\Pictures\\game_center_wallpaper.jpg"
+    type: string
+  when: ansible_os_family == "Windows"
+
+# 🔹 Mensaje de bienvenida
+- name: Mostrar mensaje de bienvenida (Windows)
+  ansible.windows.win_regedit:
+    path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System
+    name: legalnoticecaption
+    data: "Bienvenido al Game Center"
+    type: string
+  when: ansible_os_family == "Windows"
+
+- name: Mostrar mensaje de bienvenida (Windows) - texto
+  ansible.windows.win_regedit:
+    path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System
+    name: legalnoticetext
+    data: "Este equipo está configurado para uso recreativo y educativo. Disfruta responsablemente."
+    type: string
+  when: ansible_os_family == "Windows"
+
+# ======================================================
+# 🧹 MANTENIMIENTO AUTOMÁTICO
+# ======================================================
+
+# 🔹 Tarea programada para limpiar temporales (Windows)
+- name: Programar limpieza semanal de temporales (Windows)
+  ansible.windows.win_scheduled_task:
+    name: "LimpiezaGameCenter"
+    actions:
+      - path: "powershell.exe"
+        arguments: "-Command Remove-Item 'C:\\Windows\\Temp\\*' -Recurse -Force"
+    triggers:
+      - schedule: weekly
+        days_of_week: Sunday
+        start_boundary: '2025-01-01T03:00:00'
+    state: present
+  when: ansible_os_family == "Windows"
+
+# 🔹 Limpieza en Linux
+- name: Limpiar temporales y caché de juegos (Linux)
+  ansible.builtin.command: rm -rf /home/{{ nombre_usuario_salon }}/.cache/*
+  ignore_errors: yes
+  when: ansible_os_family == "Debian"

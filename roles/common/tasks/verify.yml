@@ -1,0 +1,149 @@
+
+# 🔹 Verificar usuarios creados
+- name: Verificar existencia de usuario del salón (Linux/Mac)
+  ansible.builtin.command: id {{ nombre_usuario_salon }}
+  register: verificar_usuario
+  ignore_errors: yes
+  when: ansible_os_family != "Windows"
+
+- name: Mostrar resultado de usuario (Linux/Mac)
+  ansible.builtin.debug:
+    msg: "✅ Usuario '{{ nombre_usuario_salon }}' existe correctamente en {{ inventory_hostname }}"
+  when:
+    - ansible_os_family != "Windows"
+    - verificar_usuario.rc == 0
+
+- name: Verificar existencia de usuario (Windows)
+  ansible.windows.win_shell: |
+    net user {{ nombre_usuario_salon }}
+  register: verificar_usuario_win
+  ignore_errors: yes
+  when: ansible_os_family == "Windows"
+
+- name: Mostrar resultado de usuario (Windows)
+  ansible.builtin.debug:
+    msg: "✅ Usuario '{{ nombre_usuario_salon }}' creado correctamente en {{ inventory_hostname }}"
+  when:
+    - ansible_os_family == "Windows"
+    - verificar_usuario_win.rc == 0
+
+# ======================================================
+# 🔹 Verificar software instalado
+# ======================================================
+
+- name: Verificar software instalado (Windows)
+  ansible.windows.win_shell: |
+    choco list --local-only
+  register: lista_software
+  when: ansible_os_family == "Windows"
+
+- name: Mostrar software instalado (Windows)
+  ansible.builtin.debug:
+    var: lista_software.stdout_lines
+  when: ansible_os_family == "Windows"
+
+- name: Verificar software instalado (Linux)
+  ansible.builtin.shell: |
+    dpkg -l | grep -E '{{ item }}'
+  loop: "{{ software_permitido }}"
+  register: software_linux
+  ignore_errors: yes
+  when: ansible_os_family == "Debian"
+
+- name: Mostrar software instalado (Linux)
+  ansible.builtin.debug:
+    msg: "✅ {{ item.item }} instalado correctamente"
+  loop: "{{ software_linux.results | selectattr('rc', 'equalto', 0) | list }}"
+  when: ansible_os_family == "Debian"
+
+# ======================================================
+# 🔹 Verificar servicios activos
+# ======================================================
+
+- name: Comprobar servicios activos (Linux)
+  ansible.builtin.service_facts:
+  when: ansible_os_family == "Debian"
+
+- name: Mostrar servicios críticos en ejecución (Linux)
+  ansible.builtin.debug:
+    msg:
+      - "✅ Servicio SSH activo: {{ ansible_facts.services['ssh.service'].state }}"
+      - "✅ Servicio cron activo: {{ ansible_facts.services['cron.service'].state }}"
+  when: ansible_os_family == "Debian"
+
+- name: Comprobar servicios activos (Windows)
+  ansible.windows.win_service_info:
+    name: "{{ item }}"
+  loop:
+    - LanmanWorkstation
+    - wuauserv
+  register: servicios_win
+  when: ansible_os_family == "Windows"
+
+- name: Mostrar estado de servicios (Windows)
+  ansible.builtin.debug:
+    msg: "✅ {{ item.item }} estado: {{ item.state }}"
+  loop: "{{ servicios_win.results }}"
+  when: ansible_os_family == "Windows"
+
+# ======================================================
+# 🔹 Verificar tareas programadas
+# ======================================================
+
+- name: Verificar tareas programadas (Windows)
+  ansible.windows.win_shell: schtasks /query /fo list /v | findstr /C:"Limpieza"
+  register: tareas_win
+  ignore_errors: yes
+  when: ansible_os_family == "Windows"
+
+- name: Mostrar tareas encontradas (Windows)
+  ansible.builtin.debug:
+    msg: "{{ tareas_win.stdout_lines }}"
+  when: ansible_os_family == "Windows"
+
+- name: Verificar tareas cron en Linux
+  ansible.builtin.shell: crontab -l | grep limpieza
+  register: tareas_cron
+  ignore_errors: yes
+  when: ansible_os_family == "Debian"
+
+- name: Mostrar tareas cron en Linux
+  ansible.builtin.debug:
+    msg: "{{ tareas_cron.stdout_lines }}"
+  when:
+    - ansible_os_family == "Debian"
+    - tareas_cron.rc == 0
+
+# ======================================================
+# 🔹 Verificar carpetas creadas
+# ======================================================
+
+- name: Verificar carpeta académica (Lab Académico)
+  ansible.builtin.stat:
+    path: "/home/{{ nombre_usuario_salon }}/Documentos_Academicos"
+  register: carpeta_academica
+  when:
+    - "'lab_academico' in group_names"
+    - ansible_os_family == "Debian"
+
+- name: Mostrar carpeta académica
+  ansible.builtin.debug:
+    msg: "📂 Carpeta académica creada correctamente"
+  when:
+    - "'lab_academico' in group_names"
+    - carpeta_academica.stat.exists
+
+- name: Verificar carpeta de juegos (Game Center)
+  ansible.builtin.stat:
+    path: "/home/{{ nombre_usuario_salon }}/Juegos"
+  register: carpeta_juegos
+  when:
+    - "'game_center' in group_names"
+    - ansible_os_family == "Debian"
+
+- name: Mostrar carpeta de juegos
+  ansible.builtin.debug:
+    msg: "🎮 Carpeta de juegos creada correctamente"
+  when:
+    - "'game_center' in group_names"
+    - carpeta_juegos.stat.exists
