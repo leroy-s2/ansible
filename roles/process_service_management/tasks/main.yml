@@ -1,0 +1,35 @@
+---
+# Linux: asegurar que servicios críticos estén activos
+- name: Asegurar servicios esenciales activos (Linux)
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - ssh
+    - cron
+  when: ansible_os_family == "Debian"
+
+# Windows: iniciar servicios específicos
+- name: Asegurar servicios esenciales activos (Windows)
+  ansible.windows.win_service:
+    name: "{{ item }}"
+    state: started
+  loop:
+    - wuauserv  # Windows Update
+    - LanmanWorkstation
+  when: ansible_os_family == "Windows"
+
+# Supervisar procesos en Linux
+- name: Comprobar procesos importantes
+  ansible.builtin.shell: "ps aux | grep '{{ item }}'"
+  loop:
+    - sshd
+    - cron
+  register: procesos
+  changed_when: false
+  when: ansible_os_family == "Debian"
+
+- name: Mostrar resultado de procesos
+  ansible.builtin.debug:
+    var: procesos.stdout_lines

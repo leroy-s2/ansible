@@ -1,0 +1,22 @@
+---
+- name: Deshabilitar acceso root por SSH
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin'
+    line: 'PermitRootLogin no'
+  notify: Reiniciar SSH
+  when: ansible_os_family == "Debian"
+
+- name: Desactivar servicios innecesarios
+  ansible.builtin.service:
+    name: cups
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+  when: ansible_os_family == "Debian"
+
+handlers:
+  - name: Reiniciar SSH
+    ansible.builtin.service:
+      name: ssh
+      state: restarted
