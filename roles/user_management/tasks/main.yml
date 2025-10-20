@@ -1,0 +1,26 @@
+---
+# Crea el usuario del salón (estudiante o gamer)
+- name: Crear grupo de usuarios del salón
+  ansible.builtin.group:
+    name: "{{ nombre_usuario_salon }}"
+    state: present
+  when: ansible_os_family != "Windows"
+
+- name: Crear el usuario del salón
+  ansible.builtin.user:
+    name: "{{ nombre_usuario_salon }}"
+    comment: "Usuario estándar del salón"
+    group: "{{ nombre_usuario_salon }}"
+    shell: /bin/bash
+    state: present
+  when: ansible_os_family != "Windows"
+
+# Tarea para Windows
+- name: Crear usuario del salón en Windows
+  ansible.windows.win_user:
+    name: "{{ nombre_usuario_salon }}"
+    password: "PasswordSeguro123!"
+    state: present
+    groups:
+      - Users
+  when: ansible_os_family == "Windows"

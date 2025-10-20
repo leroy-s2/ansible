@@ -1,0 +1,13 @@
+---
+- name: Instalar software permitido en el Game Center (usando Chocolatey)
+  ansible.windows.win_chocolatey:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ software_permitido }}"
+  when: ansible_os_family == "Windows"
+
+- name: Instalar Steam en Linux (usando apt)
+  ansible.builtin.apt:
+    name: steam
+    state: present
+  when: "'steam' in software_permitido and ansible_os_family == 'Debian'"

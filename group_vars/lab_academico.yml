@@ -1,0 +1,8 @@
+---
+# Variables específicas para el laboratorio académico
+nombre_usuario_salon: "estudiante"
+politica_navegador: "restringido" # Usaremos esto para configurar un proxy o extensiones
+software_permitido:
+  - 7zip
+  - vlc
+  - vscode

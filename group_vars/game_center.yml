@@ -1,0 +1,9 @@
+---
+# Variables específicas para el game center
+nombre_usuario_salon: "gamer"
+politica_navegador: "abierto"
+software_permitido:
+  - steam
+  - discord
+  - 7zip
+  - vlc

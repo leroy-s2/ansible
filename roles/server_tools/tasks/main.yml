@@ -1,0 +1,14 @@
+---
+- name: Instalar herramienta de monitoreo de pantalla (ej. Veyon) en Servidor
+  ansible.windows.win_chocolatey:
+    name: veyon
+    state: present
+  when: ansible_os_family == "Windows"
+
+- name: Instalar herramientas de gestión de procesos en Linux
+  ansible.builtin.apt:
+    name:
+      - htop  # Una versión mejorada de top
+      - nethogs # Para monitorear el ancho de banda por proceso
+    state: present
+  when: ansible_os_family == "Debian"

@@ -1,0 +1,27 @@
+---
+# Playbook para configurar todas las estaciones de trabajo
+- name: Configurar todas las estaciones de trabajo
+  hosts: workstations
+  roles:
+    - common                # Tareas comunes a todos (ej. configurar NTP)
+    - security_hardening    # Tareas básicas de seguridad
+    - user_management       # Crea los usuarios "estudiante" o "gamer"
+
+# Playbook para aplicar políticas del LAB Académico
+- name: Aplicar políticas del Laboratorio Académico
+  hosts: lab_academico
+  roles:
+    - lab_academico_policy  # Instala software académico y aplica restricciones
+
+# Playbook para aplicar políticas del Game Center
+- name: Aplicar políticas del Game Center
+  hosts: game_center
+  roles:
+    - game_center_policy    # Instala Steam/Discord y abre permisos
+
+# Playbook para configurar los servidores
+- name: Configurar los servidores de gestión
+  hosts: servers
+  become: yes
+  roles:
+    - server_tools          # Instala Veyon y otras herramientas de monitoreo
